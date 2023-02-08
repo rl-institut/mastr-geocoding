@@ -1,0 +1,19 @@
+name: mastr_geocoding_env_dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python >= 3.8, < 4
+  - pip
+  - pandas
+  - conda-forge::dynaconf
+  - conda-forge::loguru
+  - conda-forge::geopy
+  - conda-forge::geopandas
+  - certifi
+  - pre-commit
+  - black
+  - flake8
+  - isort
+  - pyupgrade
+  - ssort
