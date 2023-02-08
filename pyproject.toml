@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "mastr-geocoding"
+version = "0.1.0"
+description = "Geocoding of all unique combinations of ZIP code and municipality within MaStR"
+authors = ["Kilian Helfenbein <Kilian.Helfenbein@rl-institut.de>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^3.0.4"
+black = "^23.1.0"
+flake8 = "^6.0.0"
+isort = "^5.12.0"
+pyupgrade = "^3.3.1"
+pylint = "^2.16.1"
+ssort = "^0.11.6"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
