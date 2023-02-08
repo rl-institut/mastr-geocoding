@@ -52,11 +52,13 @@ def get_zip_and_municipality() -> pd.DataFrame:
     mastr_data = settings["mastr-data"]
     f_name = mastr_data.f_name
     technologies = mastr_data.technologies
-    boundary = mastr_data.boundary
+    federal_state = mastr_data.federal_state
 
     res_lst = []
 
     logger.info(f"Reading MaStR data from {WORKING_DIR_MASTR} ...")
+
+    federal_states = []
 
     for tech in technologies:
         df = pd.read_csv(
@@ -67,12 +69,17 @@ def get_zip_and_municipality() -> pd.DataFrame:
 
         logger.debug(f"Read {WORKING_DIR_MASTR / f_name.format(tech)}.")
 
-        if boundary == "Schleswig-Holstein":
-            df = df.loc[df.Bundesland == "SchleswigHolstein"]
+        federal_states.extend(df.Bundesland.unique().tolist())
 
-        # clean plz
-        df = df.dropna(subset="Postleitzahl")
+        federal_states = list(set(federal_states))
+
+        if federal_state in federal_states:
+            logger.debug(f"Only using data for federal state {federal_state}.")
+            df = df.loc[df.Bundesland == federal_state]
+
+        # cleaning plz
         df = df[df["Postleitzahl"].apply(lambda x: str(x).isdigit())]
+        df = df.dropna(subset="Postleitzahl")
 
         res_lst.append(
             df.Postleitzahl.astype(int).astype(str).str.zfill(5)

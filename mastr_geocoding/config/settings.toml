@@ -6,16 +6,16 @@ dump_date = "2022-11-17"
 f_name = "bnetza_mastr_{}_cleaned.csv"
 f_name_2 = "location_elec_generation_raw.csv"
 technologies = [
+    "solar",
     "wind",
     "hydro",
-    "solar",
     "biomass",
     "combustion",
     "nuclear",
     "gsgk",
     "storage",
 ]
-boundary = "Everything"
+federal_state = "Everything"
 epsg = 4326
 
 [geocoding]

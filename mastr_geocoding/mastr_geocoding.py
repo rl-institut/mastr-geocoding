@@ -68,13 +68,12 @@ def geocode_data(
         GeoDataFrame containing all unique combinations of
         zip codes with municipalities with matching geolocation.
     """
-    logger.info(f"Geocoding {len(geocoding_df)} locations ...")
+    init_len = len(geocoding_df)
+    logger.info(f"Geocoding {init_len} locations ...")
 
     geocode_df = geocoding_df.assign(
         location=geocoding_df.zip_and_municipality.apply(ratelimiter)
     )
-
-    logger.info("Geocoding done.")
 
     geocode_df = geocode_df.assign(
         point=geocode_df.location.apply(lambda loc: tuple(loc.point) if loc else None)
@@ -82,6 +81,14 @@ def geocode_data(
 
     geocode_df[["latitude", "longitude", "altitude"]] = pd.DataFrame(
         geocode_df.point.tolist(), index=geocode_df.index
+    )
+
+    failed = geocode_df.loc[geocode_df.latitude.isna() | geocode_df.longitude.isna()]
+    len_failed = len(failed)
+
+    logger.info(
+        f"Geocoding done. {len_failed} locations of {init_len} could not be parsed. "
+        f"Failed: {failed.zip_and_municipality.tolist()}"
     )
 
     return gpd.GeoDataFrame(
