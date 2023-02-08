@@ -13,7 +13,7 @@ from mastr_geocoding.config.config import settings
 WORKING_DIR_MASTR = (
     Path(__file__).resolve().parent.parent
     / "bnetza_mastr"
-    / f"dumb_{settings['mastr-data'].dump_date}"
+    / f"dump_{settings['mastr-data'].dump_date}"
 )
 
 
@@ -69,6 +69,10 @@ def get_zip_and_municipality() -> pd.DataFrame:
 
         if boundary == "Schleswig-Holstein":
             df = df.loc[df.Bundesland == "SchleswigHolstein"]
+
+        # clean plz
+        df = df.dropna(subset="Postleitzahl")
+        df = df[df["Postleitzahl"].apply(lambda x: str(x).isdigit())]
 
         res_lst.append(
             df.Postleitzahl.astype(int).astype(str).str.zfill(5)
