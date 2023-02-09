@@ -39,7 +39,19 @@ def geocoding_data(
     )
 
 
-def isfloat(num):
+def isfloat(num: str):
+    """
+    Determine if string can be converted to float.
+
+    Parameters
+    -----------
+    num : str
+        String to parse.
+    Returns
+    -------
+    bool
+        Returns True in string can be parsed to float.
+    """
     try:
         float(num)
         return True
