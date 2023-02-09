@@ -146,8 +146,8 @@ def get_zip_and_municipality() -> pd.DataFrame:
         ok_df = df.loc[mask]
 
         logger.info(
-            f"{len(ok_df)} of {len(df)} within {file} have correct values for ZIP code "
-            f"and municipality."
+            f"{len(ok_df)} of {len(df)} values within {file} have correct values for "
+            f"ZIP code and municipality."
         )
 
         res_lst.append(
