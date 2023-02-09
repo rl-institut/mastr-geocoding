@@ -204,7 +204,6 @@ def download_mastr_data():
     technologies = mastr_data.technologies
 
     files = [f_name.format(technology) for technology in technologies]
-    files.append(mastr_data.f_name_2)
 
     # Retrieve specified files
     for filename in files:

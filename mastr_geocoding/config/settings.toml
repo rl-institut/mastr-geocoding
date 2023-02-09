@@ -4,7 +4,6 @@ url = "https://sandbox.zenodo.org/record/{}/files/"
 deposit_id = 1132987
 dump_date = "2022-11-17"
 f_name = "bnetza_mastr_{}_cleaned.csv"
-f_name_2 = "location_elec_generation_raw.csv"
 technologies = [
     "solar",
     "wind",
