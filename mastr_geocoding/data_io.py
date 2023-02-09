@@ -39,6 +39,58 @@ def geocoding_data(
     )
 
 
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
+
+
+def zip_and_municipality_from_standort(
+    standort: str,
+) -> tuple[str, bool]:
+    """
+    Get zip code and municipality from Standort string split into a list.
+
+    Parameters
+    -----------
+    standort : str
+        Standort as given from MaStR data.
+    Returns
+    -------
+    str
+        Standort with only the zip code and municipality
+        as well a ', Germany' added.
+    """
+    standort_list = standort.split()
+
+    found = False
+    count = 0
+
+    for count, elem in enumerate(standort_list):
+        if len(elem) != 5:
+            continue
+        if not elem.isnumeric():
+            continue
+
+        found = True
+
+        break
+
+    if found:
+        cleaned_str = " ".join(standort_list[count:])
+
+        return cleaned_str, found
+
+    logger.warning(
+        "Couldn't identify zip code. This entry will be dropped."
+        f" Original standort: {standort}."
+    )
+
+    return standort, found
+
+
 def get_zip_and_municipality() -> pd.DataFrame:
     """
     Setup DataFrame to geocode.
@@ -58,35 +110,81 @@ def get_zip_and_municipality() -> pd.DataFrame:
 
     logger.info(f"Reading MaStR data from {WORKING_DIR_MASTR} ...")
 
-    federal_states = []
+    federal_states = set()
+
+    base_cols = ["Postleitzahl", "Gemeinde", "Bundesland", "Land"]
+    extra = ["Standort"]
 
     for tech in technologies:
+        if tech == "solar":
+            cols = base_cols + extra
+        else:
+            cols = base_cols
+
+        file = f_name.format(tech)
+
         df = pd.read_csv(
-            WORKING_DIR_MASTR / f_name.format(tech),
-            usecols=["Postleitzahl", "Gemeinde", "Bundesland", "Land"],
+            WORKING_DIR_MASTR / file,
+            usecols=cols,
             low_memory=False,
         )
 
-        logger.debug(f"Read {WORKING_DIR_MASTR / f_name.format(tech)}.")
+        logger.debug(f"Read {WORKING_DIR_MASTR / file}.")
 
-        federal_states.extend(df.Bundesland.unique().tolist())
-
-        federal_states = list(set(federal_states))
+        federal_states = federal_states.union(set(df.Bundesland.unique()))
 
         if federal_state in federal_states:
             logger.debug(f"Only using data for federal state {federal_state}.")
             df = df.loc[df.Bundesland == federal_state]
 
         # cleaning plz
-        df = df[df["Postleitzahl"].apply(lambda x: str(x).isdigit())]
-        df = df.dropna(subset="Postleitzahl")
+        mask = (
+            df.Postleitzahl.apply(isfloat)
+            & ~df.Postleitzahl.isna()
+            & ~df.Gemeinde.isna()
+        )
+        ok_df = df.loc[mask]
+
+        logger.info(
+            f"{len(ok_df)} of {len(df)} within {file} have correct values for ZIP code "
+            f"and municipality."
+        )
 
         res_lst.append(
-            df.Postleitzahl.astype(int).astype(str).str.zfill(5)
+            ok_df.Postleitzahl.astype(int).astype(str).str.zfill(5)
             + " "
-            + df.Gemeinde.astype(str).str.rstrip().str.lstrip()
+            + ok_df.Gemeinde.astype(str).str.rstrip().str.lstrip()
             + ", Deutschland"
         )
+
+        # get zip and municipality from Standort
+        parse_df = df.loc[~mask]
+
+        if parse_df.empty or "Standort" not in parse_df.columns:
+            continue
+
+        init_len = len(parse_df)
+
+        logger.info(
+            f"Parsing ZIP code and municipality from Standort for {init_len} values "
+            f"for {file}."
+        )
+
+        parsed_df = pd.DataFrame(
+            parse_df.Standort.astype(str)
+            .apply(zip_and_municipality_from_standort)
+            .tolist(),
+            index=parse_df.index,
+            columns=["zip_and_municipality", "drop_this"],
+        )
+
+        parsed_df = parsed_df.loc[parsed_df.drop_this]
+
+        logger.info(
+            f"Successfully parsed {len(parsed_df)} of {init_len} values for {file}."
+        )
+
+        res_lst.append(parsed_df["zip_and_municipality"] + ", Deutschland")
 
     return geocoding_data(pd.concat(res_lst, ignore_index=True).unique())
 
