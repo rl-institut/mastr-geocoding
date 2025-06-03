@@ -11,9 +11,9 @@ technologies = [
     "gsgk",
     "hydro",
     "nuclear",
-#    "solar",
-#    "storage",
-#    "wind",
+    "solar",
+    "storage",
+    "wind",
 ]
 federal_state = "Everything"
 epsg = 4326
