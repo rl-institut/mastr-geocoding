@@ -9,7 +9,7 @@ from loguru import logger
 
 from mastr_geocoding.config.config import settings
 from mastr_geocoding.data_io import (
-    WORKING_DIR_MASTR,
+    MASTR_DATA_DIR,
     download_mastr_data,
     get_zip_and_municipality,
 )
@@ -94,7 +94,7 @@ def geocode_data(
     return gpd.GeoDataFrame(
         geocode_df,
         geometry=gpd.points_from_xy(geocode_df.longitude, geocode_df.latitude),
-        crs=f"EPSG:{epsg}",
+        crs=f"EPSG:{epsg}",  # noqa: E231
     )
 
 
@@ -115,9 +115,9 @@ def run_mastr_geocoding() -> None:
     )
 
     geocoded_gdf.drop(columns=["location", "point"]).to_file(
-        WORKING_DIR_MASTR.parent
+        MASTR_DATA_DIR.parent
         / settings["geocoding"].export_f.format(
-            WORKING_DIR_MASTR.parts[-1], settings["mastr-data"].deposit_id
+            MASTR_DATA_DIR.parts[-1], settings["mastr-data"].deposit_id
         ),
         driver="GPKG",
     )

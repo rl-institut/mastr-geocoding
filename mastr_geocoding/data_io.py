@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import zipfile
+
 from pathlib import Path
 from urllib.request import urlretrieve
 
@@ -10,7 +12,7 @@ from loguru import logger
 
 from mastr_geocoding.config.config import settings
 
-WORKING_DIR_MASTR = (
+MASTR_DATA_DIR = (
     Path(__file__).resolve().parent.parent
     / "bnetza_mastr"
     / f"dump_{settings['mastr-data'].dump_date}"
@@ -117,10 +119,13 @@ def get_zip_and_municipality() -> pd.DataFrame:
     f_name = mastr_data.f_name
     technologies = mastr_data.technologies
     federal_state = mastr_data.federal_state
+    dump_date = mastr_data.dump_date
+    zip_name = mastr_data.zip_name.format(dump_date).split(".")[0]
+    data_dir = MASTR_DATA_DIR / zip_name
 
     res_lst = []
 
-    logger.info(f"Reading MaStR data from {WORKING_DIR_MASTR} ...")
+    logger.info(f"Reading MaStR data from {data_dir} ...")
 
     federal_states = set()
 
@@ -136,12 +141,12 @@ def get_zip_and_municipality() -> pd.DataFrame:
         file = f_name.format(tech)
 
         df = pd.read_csv(
-            WORKING_DIR_MASTR / file,
+            data_dir / file,
             usecols=cols,
             low_memory=False,
         )
 
-        logger.debug(f"Read {WORKING_DIR_MASTR / file}.")
+        logger.debug(f"Read {data_dir / file}.")
 
         federal_states = federal_states.union(set(df.Bundesland.unique()))
 
@@ -203,30 +208,44 @@ def get_zip_and_municipality() -> pd.DataFrame:
 
 def download_mastr_data():
     """
-    Download MaStR data from Zenodo.
+    Download and extract MaStR data from Zenodo if not already present.
     """
-    WORKING_DIR_MASTR.mkdir(parents=True, exist_ok=True)
+    MASTR_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Preparing to download MaStR data to {MASTR_DATA_DIR} ...")
 
-    logger.info(f"Downloading MaStR data to {WORKING_DIR_MASTR} ...")
-
-    # Get parameters from config and set download URL
     mastr_data = settings["mastr-data"]
     zenodo_files_url = mastr_data.url.format(mastr_data.deposit_id)
-    f_name = mastr_data.f_name
-    technologies = mastr_data.technologies
+    dump_date = mastr_data.dump_date
+    zip_name = mastr_data.zip_name.format(dump_date)
+    zip_path = MASTR_DATA_DIR / zip_name
 
-    files = [f_name.format(technology) for technology in technologies]
+    # Download ZIP if not already present
+    if zip_path.exists():
+        logger.info(f"ZIP file already exists at {zip_path}, skipping download.")
+    else:
+        logger.info(f"Downloading ZIP from {zenodo_files_url + zip_name} ...")
+        urlretrieve(zenodo_files_url + zip_name, zip_path)
+        logger.info(f"Download complete: {zip_path}")
 
-    # Retrieve specified files
-    for filename in files:
-        path = WORKING_DIR_MASTR / filename
+    # Check if all extracted files already exist
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        members = zip_ref.namelist()
+        missing_files = []
 
-        if not path.is_file():
-            urlretrieve(zenodo_files_url + filename, path)
+        for member in members:
+            # Überspringe Verzeichnisse
+            if member.endswith("/"):
+                continue
+            target_path = MASTR_DATA_DIR / member
+            if not target_path.exists():
+                missing_files.append(member)
 
-            logger.debug(f"Downloaded {filename} from {zenodo_files_url + filename}.")
-
+        if not missing_files:
+            logger.info("All ZIP contents already extracted, skipping extraction.")
         else:
-            logger.debug(
-                f"Already downloaded {filename} from {zenodo_files_url + filename}."
+            logger.info(
+                f"{len(missing_files)} files missing, extracting ZIP to "
+                f"{MASTR_DATA_DIR} ..."
             )
+            zip_ref.extractall(MASTR_DATA_DIR)
+            logger.info("Extraction complete.")

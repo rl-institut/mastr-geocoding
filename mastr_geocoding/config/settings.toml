@@ -1,24 +1,25 @@
 [mastr-data]
 
 url = "https://zenodo.org/records/{}/files/"
-deposit_id = 10491882
-dump_date = "2024-01-08"
-f_name = "bnetza_mastr_{}_cleaned.csv"
+deposit_id = 14783581
+dump_date = "2025-02-09"
+zip_name = "bnetza_open_mastr_{}.zip"
+f_name = "bnetza_mastr_{}_raw.csv"
 technologies = [
-    "solar",
-    "wind",
-    "hydro",
     "biomass",
     "combustion",
-    "nuclear",
     "gsgk",
+    "hydro",
+    "nuclear",
+    "solar",
     "storage",
+    "wind",
 ]
 federal_state = "Everything"
 epsg = 4326
 
 [geocoding]
 
-user_agent = "rli_kh_geocoder"
+user_agent = "rli_geocoder"
 min_delay_seconds = 1
 export_f = "mastr_geocoding_{}_{}.gpkg"
