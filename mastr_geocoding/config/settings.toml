@@ -21,5 +21,5 @@ epsg = 4326
 [geocoding]
 
 user_agent = "rli_geocoder"
-min_delay_seconds = 1
+min_delay_seconds = 2  # 1 seems too low; there are a lot of timeouts
 export_f = "mastr_geocoding_{}_{}.gpkg"
